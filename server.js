@@ -1,30 +1,16 @@
 // installed imports
 import express from "express";
 import cors from "cors";
-import mongodb from "mongodb";
 import path from "path";
 
 // custom module imports
-import enc from "./public/js/enc.js";
+import projectRouts from "./routes/projectRouts.js";
 
 // describe the port on which the server runs
 var port = process.env.port || 3000;
 
 // intialize express app object
 var app = express();
-
-// initialize collections ref
-let projectCollection;
-
-// get projects
-const getProjects = (callback) => {
-  projectCollection.find({}).toArray(callback);
-};
-
-// insert / create project
-const insertProjects = (project, callback) => {
-  projectCollection.insert(project, callback);
-};
 
 // configuring the app-level middleware
 // serving of static files through public folder
@@ -39,61 +25,10 @@ app.use(express.urlencoded({ extended: false }));
 // simpler security protocols
 app.use(cors());
 
-// connection to mongodb
-const uri = enc.dec(enc.sec);
-const client = new mongodb.MongoClient(uri, { useNewUrlParser: true });
-
-// creating collection object
-const createCollection = (collectionName) => {
-  client.connect((err, db) => {
-    projectCollection = client.db().collection(collectionName);
-    if (!err) {
-      console.log("MongoDb Connected Successfully");
-    } else {
-      console.log("DB Error: ", err);
-      process.exit(1);
-    }
-  });
-};
+// custom routes
+app.use("/api/projects", projectRouts);
 
 // listen on designated port
 app.listen(port, () => {
   console.log("App listening to: " + port);
-  createCollection("Whales");
-});
-
-app.get("/api/projects", (req, res) => {
-  getProjects((err, result) => {
-    if (err) {
-      res.json({
-        statusCode: 400,
-        message: err,
-      });
-    } else {
-      res.json({
-        statusCode: 200,
-        message: "Success",
-        data: result,
-      });
-    }
-  });
-});
-
-app.post("/api/projects", (req, res) => {
-  console.log("New project added", req.body);
-  var newProject = req.body;
-  insertProjects(newProject, (err, result) => {
-    if (err) {
-      res.json({
-        statusCode: 400,
-        message: err,
-      });
-    } else {
-      res.json({
-        statusCode: 200,
-        message: "project added successfully",
-        data: result,
-      });
-    }
-  });
 });
